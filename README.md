@@ -1,6 +1,6 @@
-# 📸 SEKITA Photobooth
+# 📸Photobooth
 
-Modern offline photobooth application for SEKITA events.
+Modern offline photobooth application for events.
 
 ## 🚀 Quick Start
 
@@ -109,10 +109,4 @@ Create PNG images with:
 4. Add error logging
 5. Set up backup system
 
-## 📞 Support
 
-SEKITA - Senat Mahasiswa FILKOM UB
-📧 sekital@ub.ac.id
-
----
-Made with ❤️ for SEKITA events
