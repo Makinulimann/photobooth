@@ -1,6 +1,6 @@
-# 📸 SEKITA Photobooth
+# 📸Photobooth
 
-Modern offline photobooth application for SEKITA events.
+Modern offline photobooth application for events.
 
 ## 🚀 Quick Start
 
@@ -48,17 +48,17 @@ photobooth/
 
 - **Size:** 15x5cm (900x300px at 60 DPI)
 - **Format:** PNG with transparency support
-- **Photo areas:** 3 slots, each 240x192px (5:4 landscape ratio)
+- **Photo areas:** 3 slots, each 200x150px 
 - **Photo positions:**
-  - Photo 1: x=60, y=54
-  - Photo 2: x=330, y=54  
-  - Photo 3: x=600, y=54
+  - Photo 1: x=50, y=100
+  - Photo 2: x=50, y=375  
+  - Photo 3: x=50, y=650
 
 ## ✨ Features
 
 - ✅ Offline functionality (except email)
 - ✅ Real-time camera preview
-- ✅ 5:4 landscape photo capture
+- ✅ 4:3 landscape photo capture
 - ✅ Custom frame overlay
 - ✅ Email delivery with attachment
 - ✅ Download functionality
@@ -94,7 +94,6 @@ Create PNG images with:
 **Photos not aligned:**
 - Check frame image dimensions
 - Verify photo position coordinates
-- Ensure 5:4 aspect ratio
 
 ## 📱 Keyboard Shortcuts
 
@@ -109,10 +108,4 @@ Create PNG images with:
 4. Add error logging
 5. Set up backup system
 
-## 📞 Support
 
-SEKITA - Senat Mahasiswa FILKOM UB
-📧 sekital@ub.ac.id
-
----
-Made with ❤️ for SEKITA events
