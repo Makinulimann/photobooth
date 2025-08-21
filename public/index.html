@@ -1,0 +1,856 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SEKITA Photobooth - Portrait Frame</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      
+      body {
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+      }
+      
+      .container {
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(20px);
+        border-radius: 24px;
+        box-shadow: 0 25px 50px rgba(0, 0, 0, 0.2);
+        width: 100%;
+        max-width: 1400px;
+        padding: 40px;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+      }
+      
+      .header {
+        text-align: center;
+        margin-bottom: 40px;
+      }
+      
+      .title {
+        font-size: 2.5rem;
+        font-weight: 700;
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        margin-bottom: 8px;
+      }
+      
+      .subtitle {
+        color: #6b7280;
+        font-size: 1.1rem;
+      }
+      
+      .main-content {
+        display: grid;
+        grid-template-columns: 1.2fr 1fr 0.8fr;
+        gap: 40px;
+        align-items: start;
+      }
+      
+      .camera-section {
+        position: relative;
+        background: #000;
+        border-radius: 20px;
+        overflow: hidden;
+        box-shadow: 0 15px 35px rgba(0, 0, 0, 0.15);
+      }
+      
+      #video {
+        width: 100%;
+        height: auto;
+        transform: scaleX(-1);
+        display: block;
+      }
+      
+      .countdown {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        font-size: 4rem;
+        font-weight: 900;
+        color: white;
+        text-shadow: 0 0 30px rgba(0, 0, 0, 0.8);
+        z-index: 10;
+        display: none;
+        animation: pulse 1s ease-in-out infinite;
+      }
+      
+      @keyframes pulse {
+        0%, 100% { transform: translate(-50%, -50%) scale(1); }
+        50% { transform: translate(-50%, -50%) scale(1.1); }
+      }
+      
+      .controls-section {
+        display: flex;
+        flex-direction: column;
+        gap: 30px;
+      }
+      
+      .photo-strip {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 15px;
+        margin-bottom: 20px;
+      }
+      
+      .photo-slot {
+        aspect-ratio: 4/3; /* Landscape 4:3 ratio */
+        background: linear-gradient(135deg, #f3f4f6, #e5e7eb);
+        border-radius: 16px;
+        border: 3px dashed #d1d5db;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        color: #9ca3af;
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+        min-height: 40px;
+      }
+      
+      .photo-slot.filled {
+        border: 3px solid #10b981;
+        border-style: solid;
+      }
+      
+      .photo-slot img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        border-radius: 12px;
+      }
+      
+      .button {
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        color: white;
+        border: none;
+        padding: 16px 32px;
+        border-radius: 16px;
+        font-size: 1.1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+        position: relative;
+        overflow: hidden;
+      }
+      
+      .button:hover:not(:disabled) {
+        transform: translateY(-2px);
+        box-shadow: 0 12px 35px rgba(102, 126, 234, 0.4);
+      }
+      
+      .button:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+        transform: none;
+      }
+      
+      .button-secondary {
+        background: linear-gradient(135deg, #ef4444, #dc2626);
+        box-shadow: 0 8px 25px rgba(239, 68, 68, 0.3);
+      }
+      
+      .button-secondary:hover:not(:disabled) {
+        box-shadow: 0 12px 35px rgba(239, 68, 68, 0.4);
+      }
+      
+      .frame-selection {
+        opacity: 0;
+        transform: translateY(20px);
+        transition: all 0.5s ease;
+      }
+      
+      .frame-selection.visible {
+        opacity: 1;
+        transform: translateY(0);
+      }
+      
+      .frame-selection h3 {
+        font-size: 1.2rem;
+        font-weight: 600;
+        color: #374151;
+        margin-bottom: 16px;
+      }
+      
+      .frame-options {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+        gap: 12px;
+        justify-items: center;
+      }
+      
+      .frame-option {
+        width: 80px;
+        height: 120px; /* 2:3 ratio untuk preview portrait frame */
+        border-radius: 12px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        border: 4px solid transparent;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        background-size: cover;
+        background-position: center;
+        background-repeat: no-repeat;
+        position: relative;
+        overflow: hidden;
+      }
+      
+      .frame-option::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 8px;
+      }
+      
+      .frame-option:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+      }
+      
+      .frame-option.selected {
+        border-color: #667eea;
+        box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+      }
+      
+      .preview-section {
+        background: #f8fafc;
+        border-radius: 20px;
+        padding: 20px;
+        text-align: center;
+        border: 2px solid #e2e8f0;
+        min-height: 600px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+      }
+      
+      .preview-section h3 {
+        font-size: 1.2rem;
+        font-weight: 600;
+        color: #374151;
+        margin-bottom: 20px;
+      }
+      
+      #previewCanvas {
+        max-width: 100%;
+        max-height: 500px;
+        border-radius: 16px;
+        box-shadow: 0 12px 30px rgba(0, 0, 0, 0.15);
+        background: white;
+      }
+      
+      .email-section {
+        opacity: 0;
+        transform: translateY(20px);
+        transition: all 0.5s ease;
+        margin-top: 20px;
+      }
+      
+      .email-section.visible {
+        opacity: 1;
+        transform: translateY(0);
+      }
+      
+      .email-input {
+        width: 100%;
+        padding: 12px 16px;
+        border: 2px solid #e2e8f0;
+        border-radius: 12px;
+        font-size: 0.9rem;
+        margin-bottom: 12px;
+        transition: border-color 0.3s ease;
+      }
+      
+      .email-input:focus {
+        outline: none;
+        border-color: #667eea;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+      }
+      
+      .progress-bar {
+        width: 100%;
+        height: 8px;
+        background: #e2e8f0;
+        border-radius: 4px;
+        overflow: hidden;
+        margin-bottom: 20px;
+      }
+      
+      .progress-fill {
+        height: 100%;
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        width: 0%;
+        transition: width 0.5s ease;
+        border-radius: 4px;
+      }
+      
+      .status-message {
+        padding: 12px 20px;
+        border-radius: 12px;
+        font-weight: 500;
+        margin-bottom: 20px;
+        opacity: 0;
+        transform: translateY(-10px);
+        transition: all 0.3s ease;
+      }
+      
+      .status-message.visible {
+        opacity: 1;
+        transform: translateY(0);
+      }
+      
+      .status-success {
+        background: #d1fae5;
+        color: #065f46;
+        border: 1px solid #a7f3d0;
+      }
+      
+      .status-error {
+        background: #fee2e2;
+        color: #991b1b;
+        border: 1px solid #fca5a5;
+      }
+      
+      .loading {
+        position: relative;
+      }
+      
+      .loading::after {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 20px;
+        height: 20px;
+        border: 2px solid rgba(255, 255, 255, 0.3);
+        border-top: 2px solid white;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+      }
+      
+      @keyframes spin {
+        0% { transform: translate(-50%, -50%) rotate(0deg); }
+        100% { transform: translate(-50%, -50%) rotate(360deg); }
+      }
+      
+      .hidden {
+        display: none !important;
+      }
+      
+      @media (max-width: 1024px) {
+        .main-content {
+          grid-template-columns: 1fr 1fr;
+          gap: 30px;
+        }
+        
+        .preview-section {
+          grid-column: 1 / -1;
+          margin-top: 30px;
+        }
+      }
+      
+      @media (max-width: 768px) {
+        .main-content {
+          grid-template-columns: 1fr;
+          gap: 30px;
+        }
+        
+        .title {
+          font-size: 2rem;
+        }
+        
+        .container {
+          padding: 20px;
+        }
+        
+        .preview-section {
+          min-height: 400px;
+        }
+      }
+      
+      /* Canvas tersembunyi untuk capture */
+      #canvas {
+        display: none;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="header">
+        <h1 class="title">📸Photobooth</h1>
+        <p class="subtitle">Portrait Frame • 5x15cm • 3 Photos in 4:3 Ratio</p>
+      </div>
+
+      <div class="progress-bar">
+        <div class="progress-fill" id="progressFill"></div>
+      </div>
+
+      <div id="statusMessage" class="status-message"></div>
+
+      <div class="main-content">
+        <!-- Camera Section -->
+        <div class="camera-section">
+          <video id="video" autoplay></video>
+          <div id="countdown" class="countdown"></div>
+          <canvas id="canvas"></canvas>
+        </div>
+
+        <!-- Controls Section -->
+        <div class="controls-section">
+          <!-- Photo Strip (Vertical) -->
+          <div>
+            <div class="photo-strip" id="photoStrip">
+              <div class="photo-slot" id="photo1">📷</div>
+              <div class="photo-slot" id="photo2">📷</div>
+              <div class="photo-slot" id="photo3">📷</div>
+            </div>
+            
+            <div style="display: flex; gap: 12px;">
+              <button id="captureBtn" class="button" style="flex: 1; padding: 12px 24px; font-size: 1rem;">
+                Take Photo
+              </button>
+              <button id="retakeBtn" class="button button-secondary hidden" style="flex: 1; padding: 12px 24px; font-size: 1rem;">
+                Start Over
+              </button>
+            </div>
+          </div>
+
+          <!-- Frame Selection -->
+          <div id="frameSelection" class="frame-selection">
+            <h3>Choose Your Frame</h3>
+            <div class="frame-options">
+              <div class="frame-option selected" data-frame="frame1.png" style="background-image: url('frames/frame1.png');">
+                <span style="position: absolute; bottom: 5px; left: 50%; transform: translateX(-50%); font-size: 9px; color: white; background: rgba(0,0,0,0.6); padding: 2px 6px; border-radius: 4px;">Frame 1</span>
+              </div>
+              <div class="frame-option" data-frame="frame2.png" style="background-image: url('frames/frame2.png');">
+                <span style="position: absolute; bottom: 5px; left: 50%; transform: translateX(-50%); font-size: 9px; color: white; background: rgba(0,0,0,0.6); padding: 2px 6px; border-radius: 4px;">Frame 2</span>
+              </div>
+              <div class="frame-option" data-frame="frame3.png" style="background-image: url('frames/frame3.png');">
+                <span style="position: absolute; bottom: 5px; left: 50%; transform: translateX(-50%); font-size: 9px; color: white; background: rgba(0,0,0,0.6); padding: 2px 6px; border-radius: 4px;">Frame 3</span>
+              </div>
+            </div>
+            <p style="font-size: 0.8rem; color: #6b7280; margin-top: 12px; text-align: center;">
+              📏 Portrait Frame: 5x15cm<br>📷 3 Photos: 4:3 landscape ratio
+            </p>
+          </div>
+
+          <!-- Email Section -->
+          <div id="emailSection" class="email-section">
+            <input id="emailInput" type="email" placeholder="Enter your email address" class="email-input" />
+            <button id="downloadBtn" class="button" style="width: 100%; margin-bottom: 10px; padding: 12px; font-size: 0.9rem;">
+              💾 Download Photo
+            </button>
+            <button id="sendBtn" class="button" style="width: 100%; padding: 12px; font-size: 0.9rem;">
+              📧 Send via Email
+            </button>
+          </div>
+        </div>
+
+        <!-- Preview Section -->
+        <div class="preview-section">
+          <h3>Live Preview</h3>
+          <canvas id="previewCanvas" width="300" height="900"></canvas>
+          <p style="color: #6b7280; margin-top: 16px; font-size: 0.9rem;" id="previewInfo">
+            Take 3 photos to see preview
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // Elements
+      const video = document.getElementById("video");
+      const canvas = document.getElementById("canvas");
+      const previewCanvas = document.getElementById("previewCanvas");
+      const captureBtn = document.getElementById("captureBtn");
+      const retakeBtn = document.getElementById("retakeBtn");
+      const downloadBtn = document.getElementById("downloadBtn");
+      const sendBtn = document.getElementById("sendBtn");
+      const emailInput = document.getElementById("emailInput");
+      const photoStrip = document.getElementById("photoStrip");
+      const countdownDisplay = document.getElementById("countdown");
+      const frameSelection = document.getElementById("frameSelection");
+      const emailSection = document.getElementById("emailSection");
+      const progressFill = document.getElementById("progressFill");
+      const statusMessage = document.getElementById("statusMessage");
+      const previewInfo = document.getElementById("previewInfo");
+
+      // State
+      let photos = [];
+      let photoCount = 0;
+      let selectedFrame = 'frame1.png';
+      let isCapturing = false;
+      let frameImage = null;
+
+      // Frame configuration untuk portrait 5x15cm (1:3 ratio)
+      const FRAME_CONFIG = {
+        // Ukuran canvas sesuai ratio 5x15cm (1:3) 
+        canvasWidth: 300,   // 5cm dalam pixel (60 DPI)
+        canvasHeight: 900,  // 15cm dalam pixel (60 DPI)
+        
+        // Ukuran dan posisi foto dalam ratio 4:3 landscape
+        photoWidth: 200,    // Lebar foto
+        photoHeight: 150,   // Tinggi foto (4:3 ratio)
+        
+        // Posisi foto vertikal (disesuaikan dengan frame portrait Anda)
+        photoPositions: [
+          { x: 50, y: 100 },  // Foto 1 (atas)
+          { x: 50, y: 375 },  // Foto 2 (tengah)
+          { x: 50, y: 650 }   // Foto 3 (bawah)
+        ]
+      };
+
+      // Initialize camera
+      async function initCamera() {
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({ 
+            video: { width: 1200, height: 700 } 
+          });
+          video.srcObject = stream;
+          showStatus('Camera ready! Take your first photo.', 'success');
+        } catch (err) {
+          showStatus('Error accessing camera: ' + err.message, 'error');
+          console.error("Camera error:", err);
+        }
+      }
+
+      // Show status message
+      function showStatus(message, type = 'success') {
+        statusMessage.textContent = message;
+        statusMessage.className = `status-message status-${type} visible`;
+        setTimeout(() => {
+          statusMessage.classList.remove('visible');
+        }, 4000);
+      }
+
+      // Update progress bar
+      function updateProgress() {
+        const progress = (photoCount / 3) * 100;
+        progressFill.style.width = `${progress}%`;
+      }
+
+      // Capture photo with countdown
+      async function captureWithCountdown() {
+        if (isCapturing || photoCount >= 3) return;
+        
+        isCapturing = true;
+        captureBtn.disabled = true;
+        
+        let countdown = 3;
+        countdownDisplay.style.display = "block";
+        countdownDisplay.textContent = countdown;
+
+        const countdownInterval = setInterval(() => {
+          countdown--;
+          countdownDisplay.textContent = countdown > 0 ? countdown : "📸";
+          
+          if (countdown === -1) {
+            clearInterval(countdownInterval);
+            countdownDisplay.style.display = "none";
+            capturePhoto();
+            isCapturing = false;
+            captureBtn.disabled = false;
+          }
+        }, 1000);
+      }
+
+      // Capture photo dengan crop ke ratio 4:3
+      function capturePhoto() {
+        const videoWidth = video.videoWidth;
+        const videoHeight = video.videoHeight;
+        
+        // Hitung crop untuk mendapat ratio 4:3 dari video
+        const targetRatio = 4/3; // 1.333
+        const videoRatio = videoWidth / videoHeight;
+        
+        let cropWidth, cropHeight, cropX, cropY;
+        
+        if (videoRatio > targetRatio) {
+          // Video lebih lebar, crop horizontal
+          cropHeight = videoHeight;
+          cropWidth = cropHeight * targetRatio;
+          cropX = (videoWidth - cropWidth) / 2;
+          cropY = 0;
+        } else {
+          // Video lebih tinggi, crop vertikal
+          cropWidth = videoWidth;
+          cropHeight = cropWidth / targetRatio;
+          cropX = 0;
+          cropY = (videoHeight - cropHeight) / 2;
+        }
+        
+        // Set canvas size sesuai crop
+        canvas.width = cropWidth;
+        canvas.height = cropHeight;
+        const ctx = canvas.getContext("2d");
+        
+        // Flip horizontal dan crop
+        ctx.translate(canvas.width, 0);
+        ctx.scale(-1, 1);
+        ctx.drawImage(video, cropX, cropY, cropWidth, cropHeight, 0, 0, canvas.width, canvas.height);
+        
+        const photoData = canvas.toDataURL("image/jpeg", 0.9);
+        photos.push(photoData);
+        
+        // Update photo slot
+        const photoSlot = document.getElementById(`photo${photoCount + 1}`);
+        photoSlot.innerHTML = `<img src="${photoData}" alt="Photo ${photoCount + 1}">`;
+        photoSlot.classList.add('filled');
+        
+        photoCount++;
+        updateProgress();
+
+        if (photoCount === 3) {
+          captureBtn.classList.add("hidden");
+          retakeBtn.classList.remove("hidden");
+          frameSelection.classList.add("visible");
+          emailSection.classList.add("visible");
+          showStatus('Perfect! All 3 photos captured. Choose your frame and download or send via email.', 'success');
+        } else {
+          showStatus(`Great! Photo ${photoCount}/3 captured. ${3 - photoCount} more to go!`, 'success');
+          setTimeout(() => captureBtn.focus(), 500);
+        }
+        
+        updatePreview();
+      }
+
+      // Update preview dengan frame portrait
+      function updatePreview() {
+        const ctx = previewCanvas.getContext("2d");
+        
+        // Set canvas size untuk portrait
+        previewCanvas.width = FRAME_CONFIG.canvasWidth;
+        previewCanvas.height = FRAME_CONFIG.canvasHeight;
+        
+        // Clear canvas dengan background putih
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, FRAME_CONFIG.canvasWidth, FRAME_CONFIG.canvasHeight);
+        
+        if (photos.length === 0) {
+          // Draw placeholder
+          ctx.fillStyle = '#9ca3af';
+          ctx.font = '16px Inter, sans-serif';
+          ctx.textAlign = 'center';
+          ctx.fillText('Take photos', FRAME_CONFIG.canvasWidth / 2, FRAME_CONFIG.canvasHeight / 2 - 20);
+          ctx.fillText('to see preview', FRAME_CONFIG.canvasWidth / 2, FRAME_CONFIG.canvasHeight / 2 + 10);
+          
+          previewInfo.textContent = "Take 3 photos to see your portrait preview";
+          return;
+        }
+        
+        // Load dan gambar foto-foto
+        let loadedPhotos = 0;
+        const totalPhotos = photos.length;
+        
+        photos.forEach((photoData, index) => {
+          const img = new Image();
+          img.onload = () => {
+            const pos = FRAME_CONFIG.photoPositions[index];
+            
+            // Gambar foto dengan rounded corners
+            ctx.save();
+            ctx.beginPath();
+            ctx.roundRect(pos.x, pos.y, FRAME_CONFIG.photoWidth, FRAME_CONFIG.photoHeight, 8);
+            ctx.clip();
+            ctx.drawImage(img, pos.x, pos.y, FRAME_CONFIG.photoWidth, FRAME_CONFIG.photoHeight);
+            ctx.restore();
+            
+            // Optional: border around photo
+            ctx.strokeStyle = '#e5e7eb';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.roundRect(pos.x, pos.y, FRAME_CONFIG.photoWidth, FRAME_CONFIG.photoHeight, 8);
+            ctx.stroke();
+            
+            loadedPhotos++;
+            
+            // Setelah semua foto digambar, gambar frame di atasnya
+            if (loadedPhotos === totalPhotos) {
+              drawFrame();
+            }
+          };
+          img.src = photoData;
+        });
+        
+        function drawFrame() {
+          if (frameImage) {
+            // Gambar frame overlay dengan opacity
+            ctx.globalAlpha = 1.0;
+            ctx.drawImage(frameImage, 0, 0, FRAME_CONFIG.canvasWidth, FRAME_CONFIG.canvasHeight);
+            ctx.globalAlpha = 1.0;
+          }
+          
+          previewInfo.textContent = `Portrait preview with ${selectedFrame} • Ready to download!`;
+        }
+      }
+
+      // Load frame image
+      function loadFrameImage(framePath) {
+        frameImage = new Image();
+        frameImage.onload = () => {
+          console.log(`Frame loaded: ${framePath}`);
+          updatePreview();
+        };
+        frameImage.onerror = () => {
+          console.warn(`Frame image not found: ${framePath}. Using placeholder.`);
+          frameImage = null;
+          updatePreview();
+        };
+        frameImage.src = `frames/${framePath}`;
+      }
+
+      // Reset everything
+      function resetPhotobooth() {
+        photos = [];
+        photoCount = 0;
+        
+        // Reset photo slots
+        for (let i = 1; i <= 3; i++) {
+          const photoSlot = document.getElementById(`photo${i}`);
+          photoSlot.innerHTML = "📷";
+          photoSlot.classList.remove('filled');
+        }
+        
+        // Reset UI
+        captureBtn.classList.remove("hidden");
+        retakeBtn.classList.add("hidden");
+        frameSelection.classList.remove("visible");
+        emailSection.classList.remove("visible");
+        emailInput.value = "";
+        
+        updateProgress();
+        updatePreview();
+        showStatus('Ready for new photos! Let\'s create another masterpiece.', 'success');
+      }
+
+      // Download photo
+      function downloadPhoto() {
+        if (photos.length < 3) {
+          showStatus('Please take all 3 photos first!', 'error');
+          return;
+        }
+        
+        const link = document.createElement('a');
+        const timestamp = new Date().toISOString().slice(0, 16).replace(/:/g, '-');
+        link.download = `photobooth-portrait-${timestamp}.png`;
+        link.href = previewCanvas.toDataURL('image/png');
+        link.click();
+        
+        showStatus('Portrait photo downloaded successfully!', 'success');
+      }
+
+      // Send email
+      async function sendEmail() {
+        if (photos.length < 3) {
+          showStatus('Please take all 3 photos first!', 'error');
+          return;
+        }
+        
+        if (!emailInput.value || !emailInput.value.includes('@')) {
+          showStatus('Please enter a valid email address!', 'error');
+          return;
+        }
+        
+        sendBtn.classList.add('loading');
+        sendBtn.disabled = true;
+        
+        try {
+          // Convert canvas to blob
+          const blob = await new Promise(resolve => {
+            previewCanvas.toBlob(resolve, 'image/png', 0.9);
+          });
+          
+          const formData = new FormData();
+          formData.append('email', emailInput.value);
+          formData.append('photo', blob, 'sekita-photobooth-portrait.png');
+          
+          const response = await fetch('/send-email', {
+            method: 'POST',
+            body: formData
+          });
+          
+          const result = await response.json();
+          
+          if (response.ok) {
+            showStatus('Email sent successfully! Check your inbox for your portrait photos.', 'success');
+            emailInput.value = '';
+          } else {
+            throw new Error(result.message || 'Failed to send email');
+          }
+        } catch (error) {
+          console.error('Email send error:', error);
+          showStatus('Failed to send email. Please check your connection or download instead.', 'error');
+        } finally {
+          sendBtn.classList.remove('loading');
+          sendBtn.disabled = false;
+        }
+      }
+
+      // Event Listeners
+      captureBtn.addEventListener("click", captureWithCountdown);
+      retakeBtn.addEventListener("click", resetPhotobooth);
+      downloadBtn.addEventListener("click", downloadPhoto);
+      sendBtn.addEventListener("click", sendEmail);
+
+      // Frame selection
+      document.querySelectorAll('.frame-option').forEach(option => {
+        option.addEventListener('click', () => {
+          document.querySelectorAll('.frame-option').forEach(opt => 
+            opt.classList.remove('selected')
+          );
+          option.classList.add('selected');
+          selectedFrame = option.dataset.frame;
+          loadFrameImage(selectedFrame);
+          showStatus(`Frame changed to ${selectedFrame}`, 'success');
+        });
+      });
+
+      // Keyboard shortcuts
+      document.addEventListener('keydown', (e) => {
+        if (e.code === 'Space' && !isCapturing && photoCount < 3 && !captureBtn.classList.contains('hidden')) {
+          e.preventDefault();
+          captureWithCountdown();
+        }
+        if (e.key === 'Escape') {
+          resetPhotobooth();
+        }
+      });
+
+      // Add rounded rectangle to canvas context
+      CanvasRenderingContext2D.prototype.roundRect = function (x, y, width, height, radius) {
+        this.moveTo(x + radius, y);
+        this.lineTo(x + width - radius, y);
+        this.quadraticCurveTo(x + width, y, x + width, y + radius);
+        this.lineTo(x + width, y + height - radius);
+        this.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+        this.lineTo(x + radius, y + height);
+        this.quadraticCurveTo(x, y + height, x, y + height - radius);
+        this.lineTo(x, y + radius);
+        this.quadraticCurveTo(x, y, x + radius, y);
+      };
+
+      // Initialize
+      initCamera();
+      loadFrameImage(selectedFrame);
+    </script>
+  </body>
+</html>
